@@ -1,4 +1,14 @@
 simul_metacomm_autoregress<- function(tree, Nspp, Ncomm, perm, power, u, envir= TRUE, binary= TRUE, test= TRUE){
+  matrix.p<-function(comm,phylodist)
+  {
+    matrix.w <- as.matrix(comm)
+    phylodist <- as.matrix(phylodist)
+    similar.phy <- 1 - (phylodist/max(phylodist))
+    matrix.phy <- 1/colSums(similar.phy)
+    matrix.q <- sweep(similar.phy, 1, matrix.phy, "*")
+    matrix.P <- matrix.w %*% matrix.q
+    return(list(matrix.w = matrix.w, matrix.q = matrix.q, matrix.P = matrix.P))
+  }
   a<- rnorm(Nspp,u,10)
   h<- runif(Nspp,0,30)
   L<- matrix(NA, Ncomm, Nspp)
@@ -39,7 +49,7 @@ simul_metacomm_autoregress<- function(tree, Nspp, Ncomm, perm, power, u, envir= 
     }
   }
   pcps.L<- PCPS::pcps(L, cophenetic(tree))
-  P<- SYNCSA::matrix.p(L,cophenetic(tree))$matrix.P
+  P<- matrix.p(L, cophenetic(tree))$matrix.P
   for (c in 1:nrow(P)){
     for (s in 1:ncol(P)){
       P.cent[c,s]<-P[c,s]-mean(P[c,])-mean(P[,s])+mean(P)
@@ -51,12 +61,11 @@ simul_metacomm_autoregress<- function(tree, Nspp, Ncomm, perm, power, u, envir= 
   if(test == TRUE){
     P.null.cent<- matrix(NA, nrow= Ncomm, ncol=Nspp)
     mod.beta<- QuantPsyc::lm.beta(mod.L)
-    #mod.beta.null<-matrix(NA,perm,1)
     seqpermutation.taxa <- SYNCSA::permut.vector(ncol(L), nset = perm)
     seqpermutation.taxa <- lapply(seq_len(nrow(seqpermutation.taxa)), function(i) seqpermutation.taxa[i,])
     phylodist<- cophenetic(tree)
     p.n.taxa <- function(samp, comm, phylodist){
-      MP.null <- SYNCSA::matrix.p(comm, phylodist[samp, samp], notification = FALSE)$matrix.P
+      MP.null <- matrix.p(comm, phylodist[samp, samp], notification = FALSE)$matrix.P
       return(MP.null)
     }
     P.null <- lapply(seqpermutation.taxa, p.n.taxa, comm = L, phylodist = phylodist)
