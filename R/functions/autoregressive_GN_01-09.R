@@ -22,13 +22,13 @@ simul_metacomm_autoregress<- function(tree, Nspp, Ncomm, perm, power, u, envir= 
   N<- scales::rescale(niche,c(-1,101))
   K.N<- picante::Kcalc(N, tree)
   Res<- matrix(NA, nrow= 1, ncol=11, 
-              dimnames= list(1, 
-                             paste(c("R2.W","Coef.a.W","Coef.b.W","Beta.W",
-                                     "Value.PCPS.1","Value.PCPS.2","R2.Res","Coef.a.Res",
-                                     "Coef.b.Res","Beta.Res","p.value")
-                                   )
-                             )
-              )
+               dimnames= list(1, 
+                              paste(c("R2.W","Coef.a.W","Coef.b.W","Beta.W",
+                                      "Value.PCPS.1","Value.PCPS.2","R2.Res","Coef.a.Res",
+                                      "Coef.b.Res","Beta.Res","p.value")
+                              )
+               )
+  )
   if(envir==TRUE){
     E<- runif(Ncomm,0,100)
   } else {E = N
@@ -65,7 +65,7 @@ simul_metacomm_autoregress<- function(tree, Nspp, Ncomm, perm, power, u, envir= 
     seqpermutation.taxa <- lapply(seq_len(nrow(seqpermutation.taxa)), function(i) seqpermutation.taxa[i,])
     phylodist<- cophenetic(tree)
     p.n.taxa <- function(samp, comm, phylodist){
-      MP.null <- matrix.p(comm, phylodist[samp, samp], notification = FALSE)$matrix.P
+      MP.null <- matrix.p(comm, phylodist[samp, samp])$matrix.P
       return(MP.null)
     }
     P.null <- lapply(seqpermutation.taxa, p.n.taxa, comm = L, phylodist = phylodist)
