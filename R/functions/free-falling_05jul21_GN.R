@@ -26,16 +26,20 @@ free.falling <- function(comm,
     comm <- vegan::decostand(comm, "pa")
   } else{comm = comm}
   
-  L.cent <- matrix(NA, 
-                   nrow = nrow(comm), 
-                   ncol = ncol(comm)
-  )
-  
-  for (c in 1:nrow(comm)){
-    for (s in 1:ncol(comm)){
-      L.cent[c,s] <- comm[c, s] - mean(comm[c, ]) - mean(comm[, s]) + mean(comm)
-    }
+  matrix.double.center <- function(mat){
+    mean_row_partial <- apply(mat, MARGIN = 2, 
+                              function(x){
+                                x - rowMeans(mat)
+                              }
+    )
+    mean_col_partial <- t(apply(mean_row_partial, MARGIN = 1, 
+                                function(x){
+                                  x - colMeans(mat)
+                                }))
+    double_center_matrix <- mean_col_partial + mean(mat)
+    return(double_center_matrix)
   }
+  L.cent <- matrix.double.center(comm)
   
   P <- matrix.p(comm, phylodist = cophenetic(phylo))$matrix.P
   P.cent <- matrix(NA, nrow=nrow(P), ncol = ncol(P))
