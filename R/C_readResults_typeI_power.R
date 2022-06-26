@@ -2,8 +2,8 @@
 
 # typeI error rho 0.0001 / no Env -------------------------------------------------
 
-res_rho0001<- readRDS(here::here("output", "Result_rho0001.rds"))
-pval_0001<- unlist(lapply(res_rho0001, function(x){
+res_rho0001 <- readRDS(here::here("output", "Result_rho0001.rds"))
+pval_0001 <- unlist(lapply(res_rho0001, function(x){
   x$Model.Results[ncol(x$Model.Results)]
 }))
 length(which(pval_0001 <= 0.05))/1000

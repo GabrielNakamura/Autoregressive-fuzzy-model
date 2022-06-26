@@ -40,14 +40,8 @@ free.falling <- function(comm,
     return(double_center_matrix)
   }
   L.cent <- matrix.double.center(comm)
-  
   P <- matrix.p(comm, phylodist = cophenetic(phylo))$matrix.P
-  P.cent <- matrix(NA, nrow=nrow(P), ncol = ncol(P))
-  for (c in 1:nrow(P)){
-    for (s in 1:ncol(P)){
-      P.cent[c,s] <- P[c, s] - mean(P[c, ]) - mean(P[, s]) + mean(P)
-    }
-  }
+  P.cent <- matrix.double.center(P)
   mod.L<-lm(as.numeric(L.cent)~as.numeric(P.cent))
   pred.L<-predict(mod.L)
   resid.L<-L.cent-pred.L
@@ -65,11 +59,7 @@ free.falling <- function(comm,
     }
     P.null <- lapply(seqpermutation.taxa, p.n.taxa, comm = comm, phylodist = phylodist)
     P.null.cent_list<- lapply(P.null, FUN=function(x){
-      for (c in 1:nrow(x)){
-        for (s in 1:ncol(x)){
-          P.null.cent[c,s]<-x[c,s]-mean(x[c,])-mean(x[,s])+mean(x)
-        }
-      }
+      P.null.cent <- matrix.double.center(x)
       P.null.cent
     })
     newClusters <- FALSE
