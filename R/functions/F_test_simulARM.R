@@ -42,16 +42,16 @@ p.n.taxa <- function(samp, L, phylo){
 #' @param Ncomm Scalar. The number of communities that will be simulated in the metacommunities
 #' @param Nspp Scalar. The number of species that will be simulated in the metacommunities
 #' @param envir Logical. If TRUE an environmental vector with normal distribution will be generated and used in simulations
-#' @param diag 
-#' @param u 
-#' @param power 
-#' @param binary 
-#' @param runs 
-#' @param test 
-#' @param nperm 
-#' @param parallel 
+#' @param diag Logical. If TRUE the diagonal in matrix q is included, if FALSE the diagonal is removed
+#' @param u Scalar. Mean value to be used in rnorm function
+#' @param power Scalar. Power parameter to compute the degree of phylogenetic signal in the simulated trait. The same parameter to be passed to \code{\link[ape]{rTraitCont}} function
+#' @param binary Logical. If TRUE (default) the community matrix will be transformed to presence and absence
+#' @param runs Scalar. An integer informing the number of times to run the simulation model
+#' @param test Logical. If TRUE (default) it will be computed power and type I error rates for beta parameter
+#' @param nperm Scalar. An integer indicating the number of permutations to be used to calculate power and type I error rates
+#' @param parallel Scalar. An integer indicating the number of cores to be used in parallel computation. If NULL parallel computing won't be used
 #'
-#' @return
+#' @return a list with all parameters returned from the simulation model 
 #' @export
 #'
 #' @examples
@@ -65,7 +65,7 @@ simul.comm <- function(Ncomm,
                        runs=30,
                        test=FALSE,
                        nperm=999,
-                       parallel=8){
+                       parallel=NULL){
   # Compute matrix P:
   # Double center matrix transformation: 
   

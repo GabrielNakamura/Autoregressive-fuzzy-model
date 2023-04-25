@@ -1,7 +1,6 @@
-download.file(url = "https://github.com/GabrielNakamura/Autoregressive-fuzzy-model/archive/master.zip", destfile = "Autoregressive-fuzzy-model.zip")
-unzip(zipfile = "Autoregressive-fuzzy-model.zip")
+# source("Simul_ARM_11fev22_LD.R")
 
-source("Simul_ARM_11fev22_LD.R")
+source(here::here("R", "functions", "F_test_simulARM.R"))
 
 #Simulation with E=P, diag=F:
 sim.rho.0.0001.PhyOnly.diagF<-simul.comm(Ncomm=50,Nspp=50,u=5,envir=FALSE,diag=FALSE,

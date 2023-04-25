@@ -13,7 +13,42 @@ matrix.p <- function(comm, phylo){
   return(list(matrix.w = matrix.w, matrix.q = matrix.q, matrix.P = matrix.P))
 }
 
+matrix.double.center <- function(mat){
+  mean_row_partial <- apply(mat, MARGIN = 2, 
+                            function(x){
+                              x - rowMeans(mat)
+                            }
+  )
+  mean_col_partial <- t(apply(mean_row_partial, MARGIN = 1, 
+                              function(x){
+                                x - colMeans(mat)
+                              }))
+  double_center_matrix <- mean_col_partial + mean(as.matrix(mat))
+  return(double_center_matrix)
+}
 
+p.n.taxa <- function(samp, comm, phylo){
+  comm.null<-comm
+  colnames(comm.null)<-col.names[samp]
+  match.null<-picante::match.phylo.comm(phylo,comm.null)
+  MP.null <- matrix.p(match.null$comm,match.null$phy)$matrix.P
+  return(MP.null)
+}
+
+#' Metacommunity autoregressive model based on phylogenetic fuzzy sets
+#'
+#' @param comm Matrix. Rows are communities and columns species
+#' @param phylo A phylo object containing the phylogeny of species in comm
+#' @param binary Logical. If TRUE (default) the community matrix will be transformed to presence and absence
+#' @param diag Logical. If TRUE the diagonal in matrix q is included, if FALSE the diagonal is removed
+#' @param test Logical. If TRUE (default) it will be computed power and type I error rates for beta parameter
+#' @param nperm Scalar. An integer indicating the number of permutations to be used to calculate power and type I error rates
+#' @param parallel Scalar. An integer indicating the number of cores to be used in parallel computation. If NULL parallel computing won't be used
+#'
+#' @return A list with results from autoregressive model
+#' @export
+#'
+#' @examples
 Fuzzy_ARM <- function(comm,
                       phylo, 
                       binary=TRUE,
@@ -37,29 +72,11 @@ Fuzzy_ARM <- function(comm,
     comm <- vegan::decostand(comm, "pa")
   } else{comm = comm}
   
-  matrix.double.center <- function(mat){
-    mean_row_partial <- apply(mat, MARGIN = 2, 
-                              function(x){
-                                x - rowMeans(mat)
-                              }
-    )
-    mean_col_partial <- t(apply(mean_row_partial, MARGIN = 1, 
-                                function(x){
-                                  x - colMeans(mat)
-                                }))
-    double_center_matrix <- mean_col_partial + mean(as.matrix(mat))
-    return(double_center_matrix)
-  }
+
   L.cent <- matrix.double.center(comm)
   
   P <- matrix.p(comm, phylo=phylo)$matrix.P
   P.cent<-matrix.double.center(P)
-  #P.cent <- matrix(NA, nrow=nrow(P), ncol = ncol(P))
- #for (c in 1:nrow(P)){
-    #for (s in 1:ncol(P)){
-      #P.cent[c,s] <- P[c, s] - mean(P[c, ]) - mean(P[, s]) + mean(P)
-    #}
-  #}
   mod.L<-lm(as.numeric(L.cent)~as.numeric(P.cent))
   pred.L<-predict(mod.L)
   resid.L<-L.cent-pred.L
@@ -70,13 +87,7 @@ Fuzzy_ARM <- function(comm,
     seqpermutation.taxa_perm <- SYNCSA::permut.vector(ncol(comm), nset = nperm)
     seqpermutation.taxa <- lapply(seq_len(nrow(seqpermutation.taxa_perm)), function(i) seqpermutation.taxa_perm[i,])
     col.names<-colnames(comm)
-    p.n.taxa <- function(samp, comm, phylo){
-      comm.null<-comm
-      colnames(comm.null)<-col.names[samp]
-      match.null<-picante::match.phylo.comm(phylo,comm.null)
-      MP.null <- matrix.p(match.null$comm,match.null$phy)$matrix.P
-      return(MP.null)
-    }
+    
     P.null <- lapply(seqpermutation.taxa, p.n.taxa, comm = comm, phylo = phylo)
     P.null.cent_list<- lapply(P.null, FUN=function(x){
       P.null.cent<-matrix.double.center(x)
