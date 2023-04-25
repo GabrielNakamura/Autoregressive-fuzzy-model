@@ -1,14 +1,56 @@
-simul_metacomm_autoregress<- function(tree, Nspp, Ncomm, perm, power, u, envir= TRUE, binary= TRUE, test= TRUE){
-  matrix.p<-function(comm,phylodist)
-  {
-    matrix.w <- as.matrix(comm)
-    phylodist <- as.matrix(phylodist)
-    similar.phy <- 1 - (phylodist/max(phylodist))
-    matrix.phy <- 1/colSums(similar.phy)
-    matrix.q <- sweep(similar.phy, 1, matrix.phy, "*")
-    matrix.P <- matrix.w %*% matrix.q
-    return(list(matrix.w = matrix.w, matrix.q = matrix.q, matrix.P = matrix.P))
-  }
+matrix.p<-function(comm,phylodist)
+{
+  matrix.w <- as.matrix(comm)
+  phylodist <- as.matrix(phylodist)
+  similar.phy <- 1 - (phylodist/max(phylodist))
+  matrix.phy <- 1/colSums(similar.phy)
+  matrix.q <- sweep(similar.phy, 1, matrix.phy, "*")
+  matrix.P <- matrix.w %*% matrix.q
+  return(list(matrix.w = matrix.w, matrix.q = matrix.q, matrix.P = matrix.P))
+}
+
+matrix.double.center <- function(mat){
+  mean_row_partial <- apply(mat, MARGIN = 2, 
+                            function(x){
+                              x - rowMeans(mat)
+                            }
+  )
+  mean_col_partial <- t(apply(mean_row_partial, MARGIN = 1, 
+                              function(x){
+                                x - colMeans(mat)
+                              }))
+  double_center_matrix <- mean_col_partial + mean(as.matrix(mat))
+  return(double_center_matrix)
+}
+
+#' Metacommunity simulation with different relationship between phylogenetic signal and environmental variable
+#'
+#' @param tree A phylogenetic tree in \code{phylo} format
+#' @param Nspp Scalar. The number of species that will be simulated in the metacommunities
+#' @param Ncomm Scalar. The number of communities that will be simulated in the metacommunities
+#' @param perm Scalar. The number of permutations to be used to calculate power and type I error rates
+#' @param power Scalar. Power parameter to compute the degree of phylogenetic signal in the simulated trait. The same parameter to be passed to \code{\link[ape]{rTraitCont}} function
+#' @param u Scalar. Mean value to be used in rnorm function
+#' @param envir Logical. If TRUE an environmental vector with normal distribution will be generated and used in simulations
+#' @param binary Logical. If TRUE (default) the community matrix will be transformed to presence and absence
+#' @param test Logical. If TRUE (default) it will be computed power and type I error rates for beta parameter
+#'
+#' @return a list with all parameters returned from the simulation model 
+#' 
+#' @export
+#'
+#' @examples
+simul_metacomm_autoregress<- function(tree,
+                                      Nspp, 
+                                      Ncomm, 
+                                      perm, 
+                                      power, 
+                                      u, 
+                                      envir= TRUE,
+                                      binary= TRUE, 
+                                      test= TRUE,
+                                      parallel = ){
+ 
   a<- rnorm(Nspp,u,10)
   h<- runif(Nspp,0,30)
   L<- matrix(NA, Ncomm, Nspp)
@@ -29,8 +71,8 @@ simul_metacomm_autoregress<- function(tree, Nspp, Ncomm, perm, power, u, envir= 
                               )
                )
   )
-  if(envir==TRUE){
-    E<- runif(Ncomm,0,100)
+  if(envir == TRUE){
+    E <- runif(Ncomm,0,100)
   } else {E = N
   }
   for(i in 1:Ncomm){
@@ -55,12 +97,12 @@ simul_metacomm_autoregress<- function(tree, Nspp, Ncomm, perm, power, u, envir= 
       P.cent[c,s]<-P[c,s]-mean(P[c,])-mean(P[,s])+mean(P)
     }
   }
-  mod.L<-lm(as.numeric(L.cent) ~ as.numeric(P.cent)) # linear model
+  mod.L <- lm(as.numeric(L.cent) ~ as.numeric(P.cent)) # linear model
   
   #### power/type I error test ####     
   if(test == TRUE){
-    P.null.cent<- matrix(NA, nrow= Ncomm, ncol=Nspp)
-    mod.beta<- QuantPsyc::lm.beta(mod.L)
+    P.null.cent <- matrix(NA, nrow= Ncomm, ncol=Nspp)
+    mod.beta <- QuantPsyc::lm.beta(mod.L)
     seqpermutation.taxa <- SYNCSA::permut.vector(ncol(L), nset = perm)
     seqpermutation.taxa <- lapply(seq_len(nrow(seqpermutation.taxa)), function(i) seqpermutation.taxa[i,])
     phylodist<- cophenetic(tree)

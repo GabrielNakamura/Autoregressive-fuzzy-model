@@ -1,4 +1,14 @@
-simul.comm<-function(Ncomm,Nspp,envir=FALSE,diag=FALSE,u=5,power=5,binary=FALSE,runs=30,test=FALSE,nperm=999,parallel=8){
+simul.comm <- function(Ncomm,
+                       Nspp,
+                       envir=FALSE,
+                       diag=FALSE,
+                       u=5,
+                       power=5,
+                       binary=FALSE,
+                       runs=30,
+                       test=FALSE,
+                       nperm=999,
+                       parallel=8){
 # Compute matrix P:
     matrix.p <- function(L, phylo){
         match<-picante::match.phylo.comm(phylo,L)

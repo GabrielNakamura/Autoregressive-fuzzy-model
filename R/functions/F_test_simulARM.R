@@ -1,16 +1,4 @@
 
-Ncomm = 20
-Nspp = 10 
-envir=FALSE 
-diag=FALSE 
-u=5 
-power=5 
-binary=FALSE 
-runs=30 
-test=FALSE 
-nperm=999 
-parallel=3
-
 matrix.p <- function(L, phylo){
   match<-picante::match.phylo.comm(phylo,L)
   matrix.w <- as.matrix(match$comm)
@@ -49,7 +37,35 @@ p.n.taxa <- function(samp, L, phylo){
 }
 
 
-simul.comm<-function(Ncomm,Nspp,envir=FALSE,diag=FALSE,u=5,power=5,binary=FALSE,runs=30,test=FALSE,nperm=999,parallel=8){
+#' Metacommunity simulation with different relationship between phylogenetic signal and environmental variable
+#'
+#' @param Ncomm Scalar. The number of communities that will be simulated in the metacommunities
+#' @param Nspp Scalar. The number of species that will be simulated in the metacommunities
+#' @param envir Logical. If TRUE an environmental vector with normal distribution will be generated and used in simulations
+#' @param diag 
+#' @param u 
+#' @param power 
+#' @param binary 
+#' @param runs 
+#' @param test 
+#' @param nperm 
+#' @param parallel 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+simul.comm <- function(Ncomm, 
+                       Nspp,
+                       envir=FALSE,
+                       diag=FALSE,
+                       u=5,
+                       power=5,
+                       binary=FALSE,
+                       runs=30,
+                       test=FALSE,
+                       nperm=999,
+                       parallel=8){
   # Compute matrix P:
   # Double center matrix transformation: 
   
@@ -154,7 +170,7 @@ simul.comm<-function(Ncomm,Nspp,envir=FALSE,diag=FALSE,u=5,power=5,binary=FALSE,
         mod.L.null_list<- parallel::parLapply(cl = CL,
                                               X = P.null.cent_list, 
                                               fun = FUN,
-                                              y = L.cent
+                                              y = L.cent)
                                               
       }
       if (newClusters){

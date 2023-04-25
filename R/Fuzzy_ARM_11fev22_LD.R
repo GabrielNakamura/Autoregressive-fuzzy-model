@@ -1,27 +1,30 @@
-Fuzzy_ARM<- function(comm,
-                         phylo, 
-                         binary=TRUE,
-                         diag=FALSE,
-                         test = TRUE, 
-                         nperm = 1000, 
-                         parallel = NULL){
-  match<-picante::match.phylo.comm(phylo,comm)
-  phylo<-match$phy
-  comm<-match$comm
-  matrix.p <- function(comm, phylo){
+matrix.p <- function(comm, phylo){
   matrix.w <- as.matrix(comm)
-    #matrix.w <- as.matrix(sweep(comm, 1, rowSums(comm,na.rm = TRUE), "/"))
-    #w.NA <- apply(matrix.w, 2, is.na)
-    #matrix.w[w.NA] <- 0
+  #matrix.w <- as.matrix(sweep(comm, 1, rowSums(comm,na.rm = TRUE), "/"))
+  #w.NA <- apply(matrix.w, 2, is.na)
+  #matrix.w[w.NA] <- 0
   similar.phy<-ape::vcv(phylo,corr=TRUE)
   matrix.phy <- 1/rowSums(similar.phy)
   matrix.q <- sweep(similar.phy, 1, matrix.phy, "*")
-      if(diag==FALSE){
-        diag(matrix.q)<-0
-      } else { matrix.q=matrix.q}
+  if(diag==FALSE){
+    diag(matrix.q)<-0
+  } else { matrix.q=matrix.q}
   matrix.P <- matrix.w %*% matrix.q
-    return(list(matrix.w = matrix.w, matrix.q = matrix.q, matrix.P = matrix.P))
-  }
+  return(list(matrix.w = matrix.w, matrix.q = matrix.q, matrix.P = matrix.P))
+}
+
+
+Fuzzy_ARM <- function(comm,
+                      phylo, 
+                      binary=TRUE,
+                      diag=FALSE,
+                      test = TRUE, 
+                      nperm = 1000, 
+                      parallel = NULL){
+  match<-picante::match.phylo.comm(phylo,comm)
+  phylo<-match$phy
+  comm<-match$comm
+
   Res <- matrix(NA,
                 nrow = 1, 
                 ncol = 3,
