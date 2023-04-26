@@ -1,5 +1,5 @@
 
-matrix.p <- function(L, phylo){
+matrix.p <- function(L, phylo, diag){
   match<-picante::match.phylo.comm(phylo,L)
   matrix.w <- as.matrix(match$comm)
   similar.phy<-ape::vcv(phy=match$phy,corr=TRUE)
@@ -28,11 +28,11 @@ matrix.double.center <- function(mat){
 }
 
 
-p.n.taxa <- function(samp, L, phylo){
+p.n.taxa <- function(samp, L, phylo, diag, col.names){
   L.null<-L
   colnames(L.null)<-col.names[samp]
   match.null<-picante::match.phylo.comm(phylo,L.null)
-  MP.null <- matrix.p(match.null$comm,match.null$phy)$matrix.P
+  MP.null <- matrix.p(match.null$comm,match.null$phy, diag)$matrix.P
   return(MP.null)
 }
 
@@ -51,7 +51,19 @@ p.n.taxa <- function(samp, L, phylo){
 #' @param nperm Scalar. An integer indicating the number of permutations to be used to calculate power and type I error rates
 #' @param parallel Scalar. An integer indicating the number of cores to be used in parallel computation. If NULL parallel computing won't be used
 #'
-#' @return a list with all parameters returned from the simulation model 
+#' @return \itemize{
+#' \item `Trees` list of simulated trees
+#' \item `Niche` simulated niche values
+#' \item `K.N` phylogenetic signal calculated for niche values accordingly to K statistic
+#' \item `Environment` if environment is TRUE the environmental vector for each simulation will be returned
+#' \item `W.matrices` simulated occurrence matrices
+#' \item `P.matrices` simulated P matrices
+#' \item `Predicted.W.matrices` predicted W matrices for each run
+#' \item `Residual.W.matrices` residual matrices from the model between P and W matrices
+#' \item `Model.Results` coefficient values from model between P and W matrices
+#' 
+#' }
+#' a list with all parameters returned from the simulation model 
 #' @export
 #'
 #' @examples
@@ -88,6 +100,16 @@ simul.comm <- function(Ncomm,
   P.list <- list()
   pred.L.list <- list()
   resid.L.list <- list()
+  
+  # setting a progress bar 
+  
+  pb <- txtProgressBar(min = 0,   
+                       max = runs, 
+                       style = 3, 
+                       width = 50,
+                       char = "=")
+  
+  
   for(k in 1:runs){
     #k = 1
     phylo <- geiger::sim.bdtree(b=0.1, d=0, stop = "taxa", n = Nspp, extinct = FALSE)
@@ -126,7 +148,7 @@ simul.comm <- function(Ncomm,
     #Res[k,7]<-pcps.L$values[2,2]
     
     # Compute matrix P:	    
-    P<-matrix.p(L,phylo=phylo)$matrix.P
+    P<-matrix.p(L, phylo=phylo, diag = diag)$matrix.P
     P.list[[k]]<-P
     # L.list[[k]]<-L # repeated
     P.cent <- matrix.double.center(P)
@@ -144,7 +166,7 @@ simul.comm <- function(Ncomm,
       seqpermutation.taxa <- lapply(seq_len(nrow(seqpermutation.taxa)), function(i) seqpermutation.taxa[i,])
       col.names <- colnames(L)
       
-      P.null <- lapply(seqpermutation.taxa, p.n.taxa, L = L, phylo = phylo)
+      P.null <- lapply(seqpermutation.taxa, p.n.taxa, L = L, phylo = phylo, diag = diag, col.names = col.names)
       P.null.cent_list<- lapply(P.null, FUN=function(x){
         P.null.cent<-matrix.double.center(x)
       })
@@ -158,23 +180,23 @@ simul.comm <- function(Ncomm,
       
       newClusters <- FALSE
       if (is.numeric(parallel)) {
-        CL <- parallel::makeCluster(parallel, type = "PSOCK")
+        parallel <- parallel::makeCluster(parallel, type = "PSOCK")
         newClusters <- TRUE
       }
-      if (!inherits(CL, "cluster")) {
+      if (!inherits(parallel, "cluster")) {
         mod.L.null_list<- lapply(P.null.cent_list, function(x){
           mod.L.null_list<- lm(as.numeric(L.cent) ~ as.numeric(x))
         }
         )
       } else{
-        mod.L.null_list<- parallel::parLapply(cl = CL,
+        mod.L.null_list<- parallel::parLapply(cl = parallel,
                                               X = P.null.cent_list, 
                                               fun = FUN,
                                               y = L.cent)
                                               
       }
       if (newClusters){
-        parallel::stopCluster(CL)
+        parallel::stopCluster(parallel)
       }
       
       mod.beta.null <- matrix(unlist(lapply(mod.L.null_list, function(x){
@@ -196,7 +218,16 @@ simul.comm <- function(Ncomm,
     Res[k,7]<-summary(mod.resid.L)$coefficients[1]
     Res[k,8]<-summary(mod.resid.L)$coefficients[2]
     Res[k,9]<-QuantPsyc::lm.beta(mod.resid.L)
-    print(k)
+    setTxtProgressBar(pb, k)
   }
-  return(list(Trees=tree.list,Niche=N,K.niche=K.N,Environment=E,W.matrices=L.list,P.matrices=P.list,Predicted.W.matrices=pred.L.list,Residual.W.matrices=resid.L.list,Model.Results=Res))
+  return(list(Trees = tree.list,
+              Niche = N,
+              K.niche = K.N, 
+              Environment = E, 
+              W.matrices = L.list, 
+              P.matrices = P.list, 
+              Predicted.W.matrices = pred.L.list, 
+              Residual.W.matrices = resid.L.list, 
+              Model.Results = Res)
+         )
 }
