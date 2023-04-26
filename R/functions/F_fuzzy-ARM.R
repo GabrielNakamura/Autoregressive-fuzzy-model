@@ -1,14 +1,13 @@
-matrix.p <- function(comm, phylo){
-  matrix.w <- as.matrix(comm)
-  #matrix.w <- as.matrix(sweep(comm, 1, rowSums(comm,na.rm = TRUE), "/"))
-  #w.NA <- apply(matrix.w, 2, is.na)
-  #matrix.w[w.NA] <- 0
-  similar.phy<-ape::vcv(phylo,corr=TRUE)
-  matrix.phy <- 1/rowSums(similar.phy)
+matrix.p <- function(L, phylo, diag){
+  match<-picante::match.phylo.comm(phylo,L)
+  matrix.w <- as.matrix(match$comm)
+  similar.phy<-ape::vcv(phy=match$phy,corr=TRUE)
+  matrix.phy <- 1/colSums(similar.phy)
   matrix.q <- sweep(similar.phy, 1, matrix.phy, "*")
   if(diag==FALSE){
     diag(matrix.q)<-0
-  } else { matrix.q=matrix.q}
+  } else { matrix.q=matrix.q
+  }
   matrix.P <- matrix.w %*% matrix.q
   return(list(matrix.w = matrix.w, matrix.q = matrix.q, matrix.P = matrix.P))
 }
@@ -27,11 +26,11 @@ matrix.double.center <- function(mat){
   return(double_center_matrix)
 }
 
-p.n.taxa <- function(samp, comm, phylo){
-  comm.null<-comm
-  colnames(comm.null)<-col.names[samp]
-  match.null<-picante::match.phylo.comm(phylo,comm.null)
-  MP.null <- matrix.p(match.null$comm,match.null$phy)$matrix.P
+p.n.taxa <- function(samp, L, phylo, diag, col.names){
+  L.null<-L
+  colnames(L.null)<-col.names[samp]
+  match.null<-picante::match.phylo.comm(phylo,L.null)
+  MP.null <- matrix.p(match.null$comm,match.null$phy, diag)$matrix.P
   return(MP.null)
 }
 
@@ -45,7 +44,14 @@ p.n.taxa <- function(samp, comm, phylo){
 #' @param nperm Scalar. An integer indicating the number of permutations to be used to calculate power and type I error rates
 #' @param parallel Scalar. An integer indicating the number of cores to be used in parallel computation. If NULL parallel computing won't be used
 #'
-#' @return A list with results from autoregressive model
+#' @return A list with results from autoregressive model containing the following itens:
+#' \itemize{
+#' Matrix.P=P,Prediction=pred.L, Residuals= resid.L,Test.Results=Res
+#' \item `Matrix.P` phylogenetic fuzzy matrix
+#' \item `Prediction` predicted value for occurrence matrix
+#' \item `Residuals` residuals obtained from original occurrence matrix and predicted occurrence matrix
+#' \item `Test.Results` a matrix with parameters from ARM: R2, slope and p-value
+#' }
 #' @export
 #'
 #' @examples
@@ -59,7 +65,7 @@ Fuzzy_ARM <- function(comm,
   match<-picante::match.phylo.comm(phylo,comm)
   phylo<-match$phy
   comm<-match$comm
-
+  
   Res <- matrix(NA,
                 nrow = 1, 
                 ncol = 3,
@@ -72,10 +78,10 @@ Fuzzy_ARM <- function(comm,
     comm <- vegan::decostand(comm, "pa")
   } else{comm = comm}
   
-
+  
   L.cent <- matrix.double.center(comm)
   
-  P <- matrix.p(comm, phylo=phylo)$matrix.P
+  P <- matrix.p(comm, phylo=phylo, diag = diag)$matrix.P
   P.cent<-matrix.double.center(P)
   mod.L<-lm(as.numeric(L.cent)~as.numeric(P.cent))
   pred.L<-predict(mod.L)
@@ -88,27 +94,32 @@ Fuzzy_ARM <- function(comm,
     seqpermutation.taxa <- lapply(seq_len(nrow(seqpermutation.taxa_perm)), function(i) seqpermutation.taxa_perm[i,])
     col.names<-colnames(comm)
     
-    P.null <- lapply(seqpermutation.taxa, p.n.taxa, comm = comm, phylo = phylo)
+    P.null <- lapply(seqpermutation.taxa, p.n.taxa, L = comm, phylo = phylo, diag = diag, col.names = col.names)
     P.null.cent_list<- lapply(P.null, FUN=function(x){
       P.null.cent<-matrix.double.center(x)
     })
     newClusters <- FALSE
+    # function to be used in parallel computation - lm model
+    FUN <- function(y, i){
+      res <- lm(as.numeric(y) ~ as.numeric(i))
+      return(res)
+    } # function to be called in parallel process
+    
     if (is.numeric(parallel)) {
       parallel <- parallel::makeCluster(parallel, type = "PSOCK")
       newClusters <- TRUE
     }
     if (!inherits(parallel, "cluster")) {
       mod.L.null_list<- lapply(P.null.cent_list, function(x){
-      mod.L.null_list<- lm(as.numeric(L.cent) ~ as.numeric(x))
+        mod.L.null_list<- lm(as.numeric(L.cent) ~ as.numeric(x))
       }
       )
     } else{
+      # parallel version
       mod.L.null_list<- parallel::parLapply(cl = parallel,
                                             X = P.null.cent_list, 
-                                            fun = function(i){
-                                              lm(as.numeric(L.cent) ~ as.numeric(i))
-                                            }
-      )
+                                            fun = FUN,
+                                            y = L.cent)
     }
     if (newClusters){
       parallel::stopCluster(parallel)
