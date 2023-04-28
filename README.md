@@ -7,7 +7,7 @@
 
 # General overview
 
-This is the repository contains the data and analysis for the manuscript
+This repository contains the data and analysis for the manuscript
 **Generalized phylogenetic fuzzy weighting: unravelling phylogenetic
 imprints on species distribution across space**. Generalized
 phylogenetic fuzzy weighting provides a way to measure the strength of
