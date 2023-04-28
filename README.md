@@ -1,9 +1,46 @@
-# Autoregressive-fuzzy-model
 
-## Download the entire repository
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
-`download.file(url = "https://github.com/GabrielNakamura/Autoregressive-fuzzy-model/archive/master.zip", destfile = "Autoregressive-fuzzy-model.zip")`
+# Generalized phylogenetic fuzzy weighting: unravelling phylogenetic imprints on species distribution across space
 
-unzip the file
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://choosealicense.com/licenses/mit/)
 
-`unzip(zipfile = "Autoregressive-fuzzy-model.zip")`
+# General overview
+
+This is the repository contains the data and analysis for the manuscript
+**Generalized phylogenetic fuzzy weighting: unravelling phylogenetic
+imprints on species distribution across space**. Generalized
+phylogenetic fuzzy weighting provides a way to measure the strength of
+phylogenetic signal in a metacommunity. This project is under
+development and will be regularly updated.
+
+# Repository structure
+
+`R` this folder contains one script to run simulation scenarios used to
+test type-I error rate and statistical power of the method
+
+`functions` this folder contains all functions needed to run the
+simulation scenarios presented in `D_simulation-scenarios-power-typeI.R`
+
+`output` this folder contains all results from simulation scenarios
+performed in `D_simulation-scenarios-power-typeI.R`
+
+# Download
+
+To install the development version of this package the user must type:
+
+``` r
+if (!requireNamespace("devtools", quietly = TRUE)){
+    install.packages("devtools")
+  }
+devtools::install_github("GabrielNakamura/Autoregressive-fuzzy-model")
+```
+
+# Examples
+
+under construction
+
+# Authors
+
+Leandro Duarte, Gabriel Nakamura, Lucas Jardim and José Alexandre
+Felizola Diniz-Filho

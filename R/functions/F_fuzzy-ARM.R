@@ -84,8 +84,8 @@ Fuzzy_ARM <- function(comm,
   P <- matrix.p(comm, phylo=phylo, diag = diag)$matrix.P
   P.cent<-matrix.double.center(P)
   mod.L<-lm(as.numeric(L.cent)~as.numeric(P.cent))
-  pred.L<-predict(mod.L)
-  resid.L<-L.cent-pred.L
+  pred.L <- matrix(predict(mod.L), nrow(comm), ncol(comm), byrow = TRUE, dimnames = list(rownames(comm), colnames(comm)))
+  resid.L<- L.cent-pred.L
   Res[,1]<-summary(mod.L)$r.squared
   Res[,2]<- QuantPsyc::lm.beta(mod.L)
   #### Test == TRUE  

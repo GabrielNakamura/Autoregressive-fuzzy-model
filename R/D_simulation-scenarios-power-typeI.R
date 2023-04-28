@@ -2,7 +2,10 @@
 
 source(here::here("R", "functions", "F_test_simulARM.R"))
 
-#Simulation with E=P, diag=F:
+
+
+# Simulation scenario E = P / diagonal Q = FALSE --------------------------
+
 sim.rho.0.0001.PhyOnly.diagF<-simul.comm(Ncomm=50,Nspp=50,u=5,envir=FALSE,diag=FALSE,
                 power=0.0001,binary=TRUE,runs=1000,test=TRUE,nperm=999,parallel=NULL)
 save.image("sim.OnlyPhy_diagF_test_n50r1000_FINAL.RData")
